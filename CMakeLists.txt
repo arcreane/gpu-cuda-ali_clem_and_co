@@ -19,6 +19,8 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        ParticleWidget.cpp
+        ParticleWidget.h
         ${TS_FILES}
 )
 
@@ -26,7 +28,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(ProjetGPU-CUDA
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        test_commit.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ProjetGPU-CUDA APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
