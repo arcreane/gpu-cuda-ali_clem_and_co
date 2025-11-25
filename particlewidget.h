@@ -21,8 +21,9 @@ public:
 public slots:
     void updateParticles();
     void explode();
-    // NOUVEAU : Pour gérer l'intensité du rebond via le slider
     void setBounciness(int value);
+    // NOUVEAU : Slot pour la friction
+    void setFriction(int value);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -32,8 +33,8 @@ private:
     QTimer *m_timer;
     QPointF m_lastMousePos;
 
-    // NOUVEAU : Facteur de rebond (0.0 = mou, 1.0 = rebond parfait, >1.0 = énergie cinétique ajoutée)
     float m_bounciness;
+    float m_friction;
 
     void initParticles(int count);
 };

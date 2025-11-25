@@ -11,13 +11,14 @@ ParticleWidget::ParticleWidget(QWidget *parent)
     setStyleSheet("background-color: black;");
     setMouseTracking(true);
 
-    // Initialisation
-    m_bounciness = 0.5f; // Valeur par défaut moyenne
-    initParticles(4000); // 4000 est un bon chiffre pour garder les collisions fluides
+    m_bounciness = 0.5f;
+    m_friction = 0.98f;
+
+    initParticles(4000);
 
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &ParticleWidget::updateParticles);
-    m_timer->start(16); // ~60 FPS
+    m_timer->start(16);
 
     m_lastMousePos = QPointF(0, 0);
 }
@@ -33,7 +34,14 @@ void ParticleWidget::initParticles(int count)
     }
 }
 
-// Slot appelé par le slider (valeur 0 à 200 transformée en 0.0 à 2.0)
+void ParticleWidget::setFriction(int value)
+{
+    // Le slider va de 0 (Glissant) à 100 (Visqueux)
+    // On veut un facteur entre 1.0 (pas de frein) et 0.90 (frein fort)
+    // Inversion : plus la valeur est haute, plus le chiffre est bas (donc ça freine)
+    m_friction = 1.0f - (value / 1000.0f);
+}
+
 void ParticleWidget::setBounciness(int value)
 {
     m_bounciness = value / 100.0f;
@@ -96,7 +104,7 @@ void ParticleWidget::updateParticles()
 
         // B. Application Mouvement
         p.position += p.velocity;
-        p.velocity *= friction;
+        p.velocity *= m_friction;
 
         // C. Rebond Murs
         if (p.position.x() < 0) { p.position.setX(0); p.velocity.setX(-p.velocity.x()); }
@@ -118,7 +126,7 @@ void ParticleWidget::updateParticles()
     // Rayon d'une particule (approximatif pour un rectangle de 3px)
     float particleRadius = 1.5f;
     float minDist = particleRadius * 2.0f; // Distance min avant collision (3.0f)
-    float minDistSq = minDist * minDist;   // Au carré pour éviter les racines carrées (optimisation)
+    float minDistSq = minDist * minDist;
 
     // Pour chaque cellule de la grille
     for (int i = 0; i < grid.size(); ++i) {
@@ -131,7 +139,6 @@ void ParticleWidget::updateParticles()
             Particle &p1 = m_particles[p1_idx];
 
             // Vérifier contre les autres particules de la MÊME cellule
-            // (On commence à j+1 pour ne pas vérifier deux fois la même paire)
             for (int k = j + 1; k < cell.size(); ++k) {
                 int p2_idx = cell[k];
                 Particle &p2 = m_particles[p2_idx];
@@ -144,7 +151,7 @@ void ParticleWidget::updateParticles()
                 if (distSq < minDistSq && distSq > 0.001f) {
                     float dist = std::sqrt(distSq);
 
-                    // 1. Repousser les particules pour qu'elles ne se chevauchent pas (Correction de position)
+                    // 1. Repousser les particules pour qu'elles ne se chevauchent pas
                     float overlap = (minDist - dist) * 0.5f; // Chacune recule de moitié
                     float nx = dx / dist; // Vecteur normal normalisé
                     float ny = dy / dist;
@@ -156,7 +163,6 @@ void ParticleWidget::updateParticles()
 
                     // 2. Échange d'énergie (Rebond)
                     // Formule simplifiée de collision élastique 1D sur le vecteur normal
-                    // v_rel . normal
                     float vRelX = p1.velocity.x() - p2.velocity.x();
                     float vRelY = p1.velocity.y() - p2.velocity.y();
                     float velAlongNormal = vRelX * nx + vRelY * ny;
@@ -190,7 +196,6 @@ void ParticleWidget::paintEvent(QPaintEvent *)
     painter.setBrush(QColor(255, 255, 255, 200));
 
     for (const Particle &p : m_particles) {
-        // On dessine un peu plus gros (3x3) pour que les collisions soient visuellement cohérentes
         painter.drawRect(QRectF(p.position.x(), p.position.y(), 3, 3));
     }
 }

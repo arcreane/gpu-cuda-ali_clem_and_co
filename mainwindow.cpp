@@ -18,7 +18,6 @@ MainWindow::MainWindow(QWidget *parent)
     font.setPointSize(10);
     QApplication::setFont(font);
 
-    // LA FEUILLE DE STYLE CORRIGÉE (Sans box-shadow)
     this->setStyleSheet(R"(
         QMainWindow {
             background-color: #121212;
@@ -93,13 +92,11 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
 
-    // A. L'écran de particules
     ParticleWidget *particleDisplay = new ParticleWidget(this);
-    // On retire box-shadow ici aussi, on garde juste la bordure bleue
     particleDisplay->setStyleSheet("border-bottom: 2px solid #00d2ff;");
     mainLayout->addWidget(particleDisplay, 1);
 
-    // B. Le panneau de contrôle
+    // Panneau de contrôle
     QWidget *controlPanel = new QWidget(this);
     controlPanel->setObjectName("ControlPanel");
     mainLayout->addWidget(controlPanel);
@@ -108,19 +105,29 @@ MainWindow::MainWindow(QWidget *parent)
     controlLayout->setContentsMargins(20, 20, 20, 20);
     controlLayout->setSpacing(15);
 
-    // 1. Le Label
-    QLabel *label = new QLabel("INTENSITÉ DU REBOND (Élasticité)", this);
-    label->setAlignment(Qt::AlignCenter);
-    controlLayout->addWidget(label);
+    // --- CONTROLE 1 : REBOND ---
+    QLabel *labelBounce = new QLabel("INTENSITÉ DU REBOND (Élasticité)", this);
+    labelBounce->setAlignment(Qt::AlignCenter);
+    controlLayout->addWidget(labelBounce);
 
-    // 2. Le Slider
     QSlider *bounceSlider = new QSlider(Qt::Horizontal, this);
     bounceSlider->setRange(0, 150);
     bounceSlider->setValue(50);
     bounceSlider->setCursor(Qt::PointingHandCursor);
     controlLayout->addWidget(bounceSlider);
 
-    // 3. Le Bouton Chaos
+    // --- CONTROLE 2 : FRICTION ---
+    QLabel *labelFriction = new QLabel("DENSITÉ DU FLUIDE (Friction)", this);
+    labelFriction->setAlignment(Qt::AlignCenter);
+    controlLayout->addWidget(labelFriction);
+
+    QSlider *frictionSlider = new QSlider(Qt::Horizontal, this);
+    frictionSlider->setRange(0, 100); // 0 = Space, 100 = Mud
+    frictionSlider->setValue(20);     // Valeur par défaut (0.98)
+    frictionSlider->setCursor(Qt::PointingHandCursor);
+    controlLayout->addWidget(frictionSlider);
+
+    // --- BOUTON CHAOS ---
     QPushButton *chaosButton = new QPushButton("CHAOS 💥", this);
     chaosButton->setObjectName("ChaosButton");
     chaosButton->setCursor(Qt::PointingHandCursor);
@@ -130,7 +137,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(chaosButton, &QPushButton::clicked, particleDisplay, &ParticleWidget::explode);
     connect(bounceSlider, &QSlider::valueChanged, particleDisplay, &ParticleWidget::setBounciness);
 
-    resize(1100, 850);
+    // Connexion du nouveau slider
+    connect(frictionSlider, &QSlider::valueChanged, particleDisplay, &ParticleWidget::setFriction);
+
+    resize(1100, 900); // Un peu plus grand pour accueillir le nouveau slider
 }
 
 MainWindow::~MainWindow()
