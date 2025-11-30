@@ -1,5 +1,5 @@
 #include <cuda_runtime.h>
-#include <helpers_cuda.h>
+// #include <helper_cuda.h> // Cet include pose pb 
 #include <cmath>
 
 // Définition des constantes de simulation (à synchroniser avec Qt si nécessaire)
