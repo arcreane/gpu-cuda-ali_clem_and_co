@@ -11,7 +11,7 @@ CudaEngine::CudaEngine(QObject *parent)
     m_netManager(new QNetworkAccessManager(this)),
     // Définissez ici l'URL de votre serveur Colab/Flask.
     // Cette URL devra être mise à jour avec l'adresse publique du tunnel Colab.
-    m_serverUrl("http://127.0.0.1:5000/simulate") 
+    m_serverUrl("https://inturned-pluteal-santa.ngrok-free.dev/simulate") 
 {
     // Connecter le slot de réponse à la fin de la requête
     connect(m_netManager, &QNetworkAccessManager::finished, this, &CudaEngine::onNetworkReply);
