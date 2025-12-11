@@ -12,6 +12,9 @@
 #define ATTRACTION_SCALING_FACTOR 2.0f
 #define CELL_SIZE 6.0f // à harmoniser avec le code global
 #define GRID_WIDTH 1337 // Largeur d'une grande grille pour éviter les collisions de hash
+#define PARTICLE_RADIUS 1.5f // Rayon des particules supposé 1.5f (taille de 3px)
+#define MIN_DIST (PARTICLE_RADIUS * 2.0f) // Distance minimale pour la collision inter-particules
+#define MIN_DIST_SQ (MIN_DIST * MIN_DIST) // Distance minimale au carré
 
 // ----------------------------------------------------
 // I. KERNEL 1 : Application des forces, Mouvement et Frottement
@@ -169,6 +172,107 @@ __global__ void calculateHashKernel(
 
 }
 
+// --------------------------------------------------------
+// V. KERNEL 5 : Résolution des Collisions Inter-Particules
+// --------------------------------------------------------
+__global__ void resolveCollisionsKernel(
+    float* pos_x, float* pos_y, 
+    float* vel_x, float* vel_y,
+    const int* particle_index, // Index triés (qui pointe vers les vrais tableaux)
+    const int* grid_hash,      // Hash trié (pour vérifier les voisins)
+    const int* cell_starts,    // Index de début de chaque nouvelle cellule de hash
+    int numParticles,
+    float bounciness
+)
+{
+    int thread_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (thread_idx < numParticles) {
+        // L'index I est l'index dans le tableau trié (0 à N-1)
+        int i = thread_idx;
+        
+        // p1_original_idx est l'index réel de la particule dans les tableaux (0 à N-1)
+        int p1_original_idx = particle_index[i]; 
+
+        // Pour simplifier au maximum, vérifions juste la cellule actuelle (pas les 8 voisines)
+        // La première particule de la cellule (début de la boucle)
+        int start_of_cell = i;
+        // On remonte jusqu'à trouver le début de la cellule triée (où le hash change)
+        while (start_of_cell > 0 && grid_hash[start_of_cell - 1] == grid_hash[i]) {
+            start_of_cell--;
+        }
+        
+        // La dernière particule de la cellule (fin de la boucle)
+        int end_of_cell = i;
+        // On descend jusqu'à trouver la fin de la cellule triée
+        while (end_of_cell < numParticles - 1 && grid_hash[end_of_cell + 1] == grid_hash[i]) {
+            end_of_cell++;
+        }
+
+        // Boucle de collision : Vérifier p1 contre toutes les autres particules p2
+        // dans la MÊME cellule. On commence à i + 1 pour éviter la double vérification.
+        for (int j = i + 1; j <= end_of_cell; ++j) {
+            
+            int p2_original_idx = particle_index[j];
+
+            // Ne jamais vérifier une particule contre elle-même
+            if (p1_original_idx == p2_original_idx) continue;
+
+            // Chargement des positions et vitesses des deux particules
+            float p1x = pos_x[p1_original_idx];
+            float p1y = pos_y[p1_original_idx];
+            float p2x = pos_x[p2_original_idx];
+            float p2y = pos_y[p2_original_idx];
+            
+            float v1x = vel_x[p1_original_idx];
+            float v1y = vel_y[p1_original_idx];
+            float v2x = vel_x[p2_original_idx];
+            float v2y = vel_y[p2_original_idx];
+
+            // --- Calcul de la Collision ---
+            float dx = p1x - p2x;
+            float dy = p1y - p2y;
+            float distSq = dx*dx + dy*dy;
+
+            // COLLISION DÉTECTÉE !
+            if (distSq < MIN_DIST_SQ && distSq > 0.001f) {
+                float dist = sqrtf(distSq);
+                
+                // 1. Repousser les particules pour qu'elles ne se chevauchent pas
+                float overlap = (MIN_DIST - dist) * 0.5f; 
+                float nx = dx / dist; // Vecteur normal normalisé
+                float ny = dy / dist;
+
+                // On applique la répulsion aux tableaux réels
+                pos_x[p1_original_idx] += nx * overlap;
+                pos_y[p1_original_idx] += ny * overlap;
+                pos_x[p2_original_idx] -= nx * overlap;
+                pos_y[p2_original_idx] -= ny * overlap;
+
+                // 2. Échange d'énergie (Rebond)
+                float vRelX = v1x - v2x;
+                float vRelY = v1y - v2y;
+                float velAlongNormal = vRelX * nx + vRelY * ny;
+
+                // Si elles s'éloignent déjà, on ne fait rien
+                if (velAlongNormal > 0) continue;
+
+                // Application de l'impulsion (masse égale = 1)
+                float j = -(1.0f + bounciness) * velAlongNormal / 2.0f; 
+
+                float impulseX = j * nx;
+                float impulseY = j * ny;
+
+                // Application de l'impulsion aux vitesses réelles
+                vel_x[p1_original_idx] += impulseX;
+                vel_y[p1_original_idx] += impulseY;
+                vel_x[p2_original_idx] -= impulseX;
+                vel_y[p2_original_idx] -= impulseY;
+            }
+        }
+    }
+}
+
 // ----------------------------------------------------
 // IV. KERNEL 4 : Collision inter-particules (VIDE pour le moment)
 // ----------------------------------------------------
@@ -284,6 +388,31 @@ extern "C" void run_cuda_simulation(
     
     // Nous sautons KERNEL 4 pour la collision inter-particules
     
+    // ------------------------------------------------------------------
+    // ÉTAPE DE RÉSOLUTION DES COLLISIONS
+    // ------------------------------------------------------------------
+
+    // 1. Calcul des index de début de cellule (Utilise Thrust::unique_by_key)
+    // Cette opération est nécessaire pour la suite et génère un tableau plus petit.
+    // Cependant, pour la méthode simple du KERNEL ci-dessus (qui trouve le début/fin
+    // manuellement), cette étape est facultative, mais elle est le standard de l'optimisation.
+    // Pour l'instant, nous nous en passons car la vérification manuelle dans le Kernel est plus simple
+    // pour éviter d'introduire des variables d'état (d_cell_starts) compliquées.
+
+    // KERNEL 4 : Résolution des collisions inter-particules
+    resolveCollisionsKernel<<<blocksPerGrid, threadsPerBlock>>>(
+        d_pos_x, d_pos_y, d_vel_x, d_vel_y,
+        d_particle_index, // Le tableau trié
+        d_grid_hash,      // Le hash trié
+        d_cell_starts,    // (Non utilisé dans cette version simple du Kernel)
+        numParticles,
+        bounciness
+    );
+
+    // Synchronisation pour s'assurer que tous les Kernels sont terminés
+    cudaDeviceSynchronize();
+
+    // ... (Transfert Périphérique -> Hôte inchangé) ...
     // Synchronisation pour s'assurer que tous les Kernels sont terminés
     cudaDeviceSynchronize();
     
