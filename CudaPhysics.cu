@@ -180,7 +180,7 @@ __global__ void resolveCollisionsKernel(
     float* vel_x, float* vel_y,
     const int* particle_index, // Index triés (qui pointe vers les vrais tableaux)
     const int* grid_hash,      // Hash trié (pour vérifier les voisins)
-    const int* cell_starts,    // Index de début de chaque nouvelle cellule de hash
+    // const int* cell_starts,    // Index de début de chaque nouvelle cellule de hash mais non utilisé depuis l'implémentation simple
     int numParticles,
     float bounciness
 )
@@ -404,7 +404,7 @@ extern "C" void run_cuda_simulation(
         d_pos_x, d_pos_y, d_vel_x, d_vel_y,
         d_particle_index, // Le tableau trié
         d_grid_hash,      // Le hash trié
-        d_cell_starts,    // (Non utilisé dans cette version simple du Kernel)
+        // d_cell_starts,    // (Non utilisé dans cette version simple du Kernel)
         numParticles,
         bounciness
     );
