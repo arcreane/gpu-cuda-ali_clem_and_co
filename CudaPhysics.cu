@@ -223,7 +223,7 @@ extern "C" void run_cuda_simulation(
         cudaMalloc((void**)&d_vel_x, size);
         cudaMalloc((void**)&d_vel_y, size);
         cudaMalloc((void**)&d_grid_hash, numParticles * sizeof(int)); // Allocation de mémoire pour les tableaux de hashage et de l'index
-        cudaMalloc((void**)&d_particle_index, numParticles * sizepf(int));
+        cudaMalloc((void**)&d_particle_index, numParticles * sizeof(int));
         s_allocated_count = numParticles;
     }
     
