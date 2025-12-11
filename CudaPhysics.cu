@@ -1,12 +1,17 @@
 #include <cuda_runtime.h>
 // #include <helper_cuda.h> // Cet include pose pb 
 #include <cmath>
+#include <thrust/sort.h>
+#include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
 
 // Définition des constantes de simulation (à synchroniser avec Qt si nécessaire)
 // Pour l'interaction souris
 #define INTERACTION_RADIUS 150.0f
 #define FORCE_FACTOR 0.6f
 #define ATTRACTION_SCALING_FACTOR 2.0f
+#define CELL_SIZE 6.0f // à harmoniser avec le code global
+#define GRID_WIDTH 1337 // Largeur d'une grande grille pour éviter les collisions de hash
 
 // ----------------------------------------------------
 // I. KERNEL 1 : Application des forces, Mouvement et Frottement
@@ -77,7 +82,7 @@ __global__ void wallCollisionXKernel(
     float* pos_x, float* vel_x,
     int numParticles,
     int width
-    // Note: Le coefficient de restitution (bounciness) peut être appliqué ici
+
 )
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -131,6 +136,40 @@ __global__ void wallCollisionYKernel(
 }
 
 // ----------------------------------------------------
+// IV. KERNEL 4 : Calcul du Hash (Hashing)
+// ----------------------------------------------------
+
+__global__ void calculateHashKernel(
+    const float* pos_x, const float* pos_y,
+    int* grid_hash, int* particle_index,
+    int numParticles, int gridTotalWidth, int gridTotalHeigth)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < numParticles){
+        // 1. Déterminer les coordonnées de la cellule
+        // Bien s'assurer que les positions sont dans les limites [0, width/height]
+        int gx = (int)(pos_x[i] / CELL_SIZE);
+        int gy = (int)(pos_y[i] / CELL_SIZE);
+
+        // Sécurité des coordonnées de la grille
+        if (gx < 0) gx = 0;
+        if (gy < 0) gy = 0;
+
+        // 2. Calculer l'Index de Hachage (Hash)
+        // Utilisation d'un décalage (shift) pour s'assurer que l'index est unique
+        // sans avoir à connaître la taille exacte de la grille de rendu.
+        int hash = (gy * GRID_WIDTH) + gx;
+
+        // 3. Enregistrement
+        grid_hash[i] = hash;
+        particle_index[i] = i; // L'index original (0, 1, 2, 3...)
+
+    }
+
+}
+
+// ----------------------------------------------------
 // IV. KERNEL 4 : Collision inter-particules (VIDE pour le moment)
 // ----------------------------------------------------
 /*
@@ -150,6 +189,8 @@ static float* d_pos_x = nullptr;
 static float* d_pos_y = nullptr;
 static float* d_vel_x = nullptr;
 static float* d_vel_y = nullptr;
+static int* d_grid_hash = nullptr;
+static int* d_particle_index = nullptr;
 static int s_allocated_count = 0;
 
 // Fonction C exposée pour l'appel par la librairie Python (ctypes)
@@ -173,12 +214,16 @@ extern "C" void run_cuda_simulation(
         if (d_pos_y) cudaFree(d_pos_y);
         if (d_vel_x) cudaFree(d_vel_x);
         if (d_vel_y) cudaFree(d_vel_y);
+        if (d_grid_hash) cudaFree(d_grid_hash);
+        if (d_particle_index) cudaFree(d_particle_index);
         
-        // Allocation de la nouvelle mémoire (4 tableaux séparés)
+        // Allocation de la nouvelle mémoire
         cudaMalloc((void**)&d_pos_x, size);
         cudaMalloc((void**)&d_pos_y, size);
         cudaMalloc((void**)&d_vel_x, size);
         cudaMalloc((void**)&d_vel_y, size);
+        cudaMalloc((void**)&d_grid_hash, numParticles * sizeof(int)); // Allocation de mémoire pour les tableaux de hashage et de l'index
+        cudaMalloc((void**)&d_particle_index, numParticles * sizepf(int));
         s_allocated_count = numParticles;
     }
     
@@ -193,6 +238,29 @@ extern "C" void run_cuda_simulation(
     int blocksPerGrid = (numParticles + threadsPerBlock - 1) / threadsPerBlock;
     
     // 3. Lancement des Kernels (Exécution Parallèle)
+
+    // ------------------------------------------------------------------
+    // PHASE PRÉLIMINAIRE : HACHAGE ET TRI
+    // ------------------------------------------------------------------
+
+    // Définition des constantes de la grille pour le Kernel
+    const int GRID_TOTAL_WIDTH = 1000; // Taille de la grille (doit être assez grande)
+    const int GRID_TOTAL_HEIGHT = 1000;
+
+    // ÉTAPE 1 : Calcul du Hash et de l'Index Original (Kernel)
+    calculateHashKernel<<<blocksPerGrid, threadsPerBlock>>>(
+        d_pos_x, d_pos_y,
+        d_grid_hash, d_particle_index,
+        numParticles, GRID_TOTAL_WIDTH, GRID_TOTAL_HEIGHT
+        );
+
+    // ÉTAPE 2 : Tri des tableaux par la clé de hachage (Thrust)
+    thrust::sort_by_key(
+        thrust::device,
+        d_grid_hash,
+        d_grid_hash + numParticles,
+        d_particle_index
+        );
     
     // KERNEL 1 : Application des forces, mouvement et frottement
     applyForcesAndMoveKernel<<<blocksPerGrid, threadsPerBlock>>>(
@@ -201,7 +269,7 @@ extern "C" void run_cuda_simulation(
         mousePosX, mousePosY, mouseSpeed, 
         isBlackHoleActive
     );
-    
+
     // KERNEL 2 : Collisions Murs (Horizontal)
     wallCollisionXKernel<<<blocksPerGrid, threadsPerBlock>>>(
         d_pos_x, d_vel_x,
