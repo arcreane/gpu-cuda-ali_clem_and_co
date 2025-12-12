@@ -5,6 +5,8 @@
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/pair.h>
+#include <thrust/iterator/zip_iterator.h> // Souvent nécessaire pour les algorithmes par clé
+#include <thrust/transform.h>     // Algorithmes de base
 
 // Définition des constantes de simulation (à synchroniser avec Qt si nécessaire)
 // Pour l'interaction souris
