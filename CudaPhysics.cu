@@ -296,7 +296,7 @@ static float* d_pos_x = nullptr;
 static float* d_pos_y = nullptr;
 static float* d_vel_x = nullptr;
 static float* d_vel_y = nullptr;
-static int* d_cell_starts = nullptr;
+//static int* d_cell_starts = nullptr;
 static int* d_grid_hash = nullptr;
 static int* d_particle_index = nullptr;
 static int s_allocated_count = 0;
@@ -324,7 +324,7 @@ extern "C" void run_cuda_simulation(
         if (d_vel_y) cudaFree(d_vel_y);
         if (d_grid_hash) cudaFree(d_grid_hash);
         if (d_particle_index) cudaFree(d_particle_index);
-        if (d_cell_starts) cudaFree(d_cell_starts);
+        //if (d_cell_starts) cudaFree(d_cell_starts);
         
         // Allocation de la nouvelle mémoire
         cudaMalloc((void**)&d_pos_x, size);
@@ -333,7 +333,7 @@ extern "C" void run_cuda_simulation(
         cudaMalloc((void**)&d_vel_y, size);
         cudaMalloc((void**)&d_grid_hash, numParticles * sizeof(int)); // Allocation de mémoire pour les tableaux de hashage et de l'index
         cudaMalloc((void**)&d_particle_index, numParticles * sizeof(int));
-        cudaMalloc((void**)&d_cell_starts, numParticles * sizeof(int)); // Allocation généreuse car la taille finale sera plus petite
+       //cudaMalloc((void**)&d_cell_starts, numParticles * sizeof(int)); // Allocation généreuse car la taille finale sera plus petite
         s_allocated_count = numParticles;
     }
     
@@ -372,6 +372,7 @@ extern "C" void run_cuda_simulation(
         d_particle_index
         );
 
+    /*
     // Déclaration des pointeurs de fin (résultats de l'opération unique_by_key)
     int* end_keys_ptr;
     int* end_values_ptr;
@@ -396,7 +397,8 @@ extern "C" void run_cuda_simulation(
     // Le nombre de cellules uniques est la distance jusqu'au pointeur de fin
     int numUniqueCells = thrust::distance(d_cell_starts, result.second);
     // Note: On devrait stocker ce numUniqueCells statiquement pour un usage ultérieur.
-    
+    */
+
     // KERNEL 1 : Application des forces, mouvement et frottement
     applyForcesAndMoveKernel<<<blocksPerGrid, threadsPerBlock>>>(
         d_pos_x, d_pos_y, d_vel_x, d_vel_y,
