@@ -352,7 +352,8 @@ extern "C" void run_cuda_simulation(
     // ------------------------------------------------------------------
     // PHASE PRÉLIMINAIRE : HACHAGE ET TRI
     // ------------------------------------------------------------------
-
+    // DESACTIVATION DE LA PHASE DE HACHAGE ET DE TRI CAR TROP DE PBs
+    /*
     // Définition des constantes de la grille pour le Kernel
     const int GRID_TOTAL_WIDTH = 1000; // Taille de la grille (doit être assez grande)
     const int GRID_TOTAL_HEIGHT = 1000;
@@ -381,6 +382,7 @@ extern "C" void run_cuda_simulation(
 
     }
     // --- FIN DU BLOC SOUS OBSERVATION ---
+    */
 
     // KERNEL 1 : Application des forces, mouvement et frottement
     applyForcesAndMoveKernel<<<blocksPerGrid, threadsPerBlock>>>(
@@ -402,6 +404,7 @@ extern "C" void run_cuda_simulation(
         numParticles, height
     );
     
+    /*
     // Nous sautons KERNEL 4 pour la collision inter-particules
     
     // ------------------------------------------------------------------
@@ -424,7 +427,7 @@ extern "C" void run_cuda_simulation(
         numParticles,
         bounciness
     );
-
+    */
     // Synchronisation pour s'assurer que tous les Kernels sont terminés
     cudaDeviceSynchronize();
 
