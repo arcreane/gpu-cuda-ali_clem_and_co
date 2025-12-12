@@ -22,8 +22,8 @@ public slots:
     void updateParticles();
     void explode();
     void setBounciness(int value);
-    // NOUVEAU : Slot pour la friction
     void setFriction(int value);
+    void changeParticleCount(int count);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

@@ -5,6 +5,7 @@
 #include <QSlider>
 #include <QLabel>
 #include <QFontDatabase>
+#include <QSpinBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -127,6 +128,45 @@ MainWindow::MainWindow(QWidget *parent)
     frictionSlider->setCursor(Qt::PointingHandCursor);
     controlLayout->addWidget(frictionSlider);
 
+    // ... (Après tes sliders Rebond et Friction) ...
+
+    // --- LIGNE DE SÉPARATION (Optionnel pour faire propre) ---
+    QFrame *line = new QFrame(this);
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    line->setStyleSheet("background-color: #333;");
+    controlLayout->addWidget(line);
+
+    // --- CONTRÔLE NOMBRE DE PARTICULES ---
+    QHBoxLayout *countLayout = new QHBoxLayout();
+
+    QLabel *labelCount = new QLabel("NOMBRE DE PARTICULES :", this);
+    labelCount->setStyleSheet("color: #a0a0b0; font-weight: bold;");
+    countLayout->addWidget(labelCount);
+
+    QSpinBox *particleSpinBox = new QSpinBox(this);
+    particleSpinBox->setRange(100, 100000);
+    particleSpinBox->setSingleStep(1000);
+    particleSpinBox->setValue(5000);
+
+    particleSpinBox->setStyleSheet(
+        "QSpinBox { background: #0a0a0a; color: #00d2ff; border: 1px solid #333; padding: 5px; font-weight: bold; }"
+        "QSpinBox::up-button, QSpinBox::down-button { background: #222; }"
+        );
+    countLayout->addWidget(particleSpinBox);
+
+    QPushButton *applyBtn = new QPushButton("APPLY", this);
+    applyBtn->setCursor(Qt::PointingHandCursor);
+    applyBtn->setFixedWidth(100);
+
+    applyBtn->setStyleSheet(
+        "QPushButton { background-color: #006644; color: white; font-weight: bold; border: none; padding: 5px; border-radius: 4px; }"
+        "QPushButton:hover { background-color: #008855; }"
+        "QPushButton:pressed { background-color: #004422; }"
+        );
+    countLayout->addWidget(applyBtn);
+    controlLayout->addLayout(countLayout);
+
     // --- BOUTON CHAOS ---
     QPushButton *chaosButton = new QPushButton("CHAOS 💥", this);
     chaosButton->setObjectName("ChaosButton");
@@ -139,8 +179,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Connexion du nouveau slider
     connect(frictionSlider, &QSlider::valueChanged, particleDisplay, &ParticleWidget::setFriction);
+    connect(applyBtn, &QPushButton::clicked, [=]() {
+        particleDisplay->changeParticleCount(particleSpinBox->value());
+    });
 
-    resize(1100, 900); // Un peu plus grand pour accueillir le nouveau slider
+    resize(1100, 900);
 }
 
 MainWindow::~MainWindow()
