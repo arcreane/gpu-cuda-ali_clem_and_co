@@ -1,4 +1,4 @@
-// CudaEngine.cuh
+// CudaEngine.h
 #ifndef CUDA_ENGINE_H
 #define CUDA_ENGINE_H
 
@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QNetworkAccessManager> // Nécessaire pour les appels HTTP
 #include <QNetworkReply>
+#include <QUrl>
 #include "Particle_types.h"
 
 // Note: CudaEngine devient QObject pour gérer les signaux/slots réseau
@@ -47,7 +48,7 @@ private:
 
     // Méthodes de sérialisation
     QByteArray serializeParticles(const QVector<Particle>& particles) const;
-    void deserializeParticles(const QByteArray& data, QVector<Particle>& particles);
+    // void deserializeParticles(const QByteArray& data, QVector<Particle>& particles); // Supprimée car inutilisée
 };
 
 #endif // CUDA_ENGINE_H

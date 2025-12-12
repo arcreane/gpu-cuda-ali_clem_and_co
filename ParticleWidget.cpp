@@ -1,5 +1,5 @@
-#include "particlewidget.h"
-#include "CudaEngine.cuh"
+#include "ParticleWidget.h"
+#include "CudaEngine.h"
 #include <QPainter>
 #include <QRandomGenerator>
 #include <QCursor>
@@ -21,9 +21,6 @@ ParticleWidget::ParticleWidget(QWidget *parent)
 
     // Connexion : Quand le calcul distant est fait, redessine l'UI
     connect(m_cudaEngine, &CudaEngine::simulationFinished, this, QOverload<>::of(&QWidget::update));
-
-    // Initialisation du moteur CUDA avec le nb de particules
-    //CudaEngine::initDevice(50000);
 
     m_timer = new QTimer(this);
 
@@ -63,10 +60,11 @@ void ParticleWidget::requestSimulation()
         // positions / vitesses rapatriées par CudaEngine::runSimulation.
 }
 
+
 // AJOUT d'une fonction de nettoyage
 ParticleWidget::~ParticleWidget()
 {
-    CudaEngine::cleanupDevice();
+
 }
 
 void ParticleWidget::initParticles(int count)
@@ -78,10 +76,6 @@ void ParticleWidget::initParticles(int count)
     float widgetWidth = (float)width();
     float widgetHeight = (float)height();
 
-    // Si la taille change, on doit aussi réinitialiser le GPU
-    if (CudaEngine::s_allocated_count != 0){
-        CudaEngine::initDevice(count);
-    } 
     for (int i = 0; i < count; ++i) {
         float x = QRandomGenerator::global()->bounded(widgetWidth);
         float y = QRandomGenerator::global()->bounded(widgetHeight);
@@ -112,39 +106,6 @@ void ParticleWidget::explode()
     }
 }
 
-/**
- * Fonction obsolète, remplacée par requestSimulation() qui utilise CudaEngine (plus haut).
- * 
-void ParticleWidget::updateParticles()
-{
-    // --- 1. Gestion Souris (Trou Noir / Répulsion) ---
-    QPointF mousePos = mapFromGlobal(QCursor::pos());
-    QPointF mouseVel = mousePos - m_lastMousePos;
-    m_lastMousePos = mousePos;
-    float mouseSpeed = std::sqrt(std::pow(mouseVel.x(), 2) + std::pow(mouseVel.y(), 2));
-
-    const float friction = 0.98f; // Moins de friction pour bien voir les rebonds
-    const float interactionRadius = 150.0f;
-    const float forceFactor = 0.6f;
-    bool isBlackHoleActive = (QApplication::mouseButtons() & Qt::LeftButton);
-
-    // --- 2. Délégation du calcul au moteur GPU (CUDA) ---
-    CudaEngine::runSimulation(
-        m_particles,
-        mousePos,
-        mouseSpeed,
-        m_friction,
-        m_bounciness,
-        isBlackHoleActive,
-        width(),
-        height()
-        );
-
-        // L'état de m_particles est maintenant mis à jour avec les nouvelles
-        // positions / vitesses rapatriées par CudaEngine::runSimulation.
-
-    update();
-}*/
 
 void ParticleWidget::paintEvent(QPaintEvent *)
 {

@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-# On ajoute CUDA à la liste des languages du projet
-project(ProjetGPU-CUDA VERSION 0.1 LANGUAGES CXX CUDA)
+project(ProjetGPU-CUDA VERSION 0.1 LANGUAGES CXX)
 
 
 set(CMAKE_AUTOUIC ON)
@@ -12,17 +11,17 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ----- Configuration CUDA -----
-find_package(CUDA REQUIRED) # tente et trouve le toolkit CUDA
-enable_language(CUDA) # Active le language CUDA pour le projet
+# find_package(CUDA REQUIRED) # tente et trouve le toolkit CUDA
+# enable_language(CUDA) # Active le language CUDA pour le projet
 # Définir le standard C++ utilisé pour les fichiers CUDA
-set(CUDA_SEPARABLE_COMPILATION ON)
-set(CMAKE_CUDA_STANDARD 17)
-set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+# set(CUDA_SEPARABLE_COMPILATION ON)
+# set(CMAKE_CUDA_STANDARD 17)
+# set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 # ------------------------------
 
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network LinguistTools)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network LinguistTools)
 
 set(TS_FILES ProjetGPU-CUDA_fr_FR.ts)
 
@@ -33,7 +32,7 @@ set(PROJECT_SOURCES
         mainwindow.ui
         ParticleWidget.cpp
         ParticleWidget.h
-        CudaEngine.cu
+        CudaEngine.cpp
         # Ajout du fichier source CUDA
         ${TS_FILES}
 )
@@ -43,7 +42,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         Particle_types.h
-        CudaEngine.cuh
+        CudaEngine.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ProjetGPU-CUDA APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -69,7 +68,8 @@ endif()
 
 target_link_libraries(ProjetGPU-CUDA PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
-    ${CUDA_LIBRAIRIES} # Liaison des libs CUDA (runtime, etc.) au projet
+    Qt${QT_VERSION_MAJOR}::Network
+    # ${CUDA_LIBRAIRIES} # Liaison des libs CUDA (runtime, etc.) au projet
 
 )
 

@@ -1,6 +1,7 @@
 // CudaEngine.cpp (Renommé depuis CudaEngine.cu)
-
-#include "CudaEngine.cuh"
+#include "Particle_types.h"
+#include "CudaEngine.h"
+#include "moc_CudaEngine.cpp"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
