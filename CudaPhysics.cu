@@ -372,6 +372,10 @@ extern "C" void run_cuda_simulation(
         d_particle_index
         );
 
+    // Déclaration des pointeurs de fin (résultats de l'opération unique_by_key)
+    int* end_keys_ptr;
+    int* end_values_ptr;
+
     // ÉTAPE 3 : Calculer les index de début de chaque cellule
     // Utilisation d'un vecteur temporaire pour stocker les index de fin
     thrust::device_vector<int> unique_hashes_temp(numParticles);
@@ -385,6 +389,7 @@ extern "C" void run_cuda_simulation(
         d_particle_index, // Valeurs triées
         unique_hashes_temp.begin(), // Pour stocker les hashs uniques (non utilisé, mais nécessaire)
         d_cell_starts // OÙ stocker les index de DÉBUT de chaque groupe
+        &end_
         );
     // Le nombre de cellules uniques est la distance jusqu'au pointeur de fin
     int numUniqueCells = thrust::distance(d_cell_starts, result.second);
