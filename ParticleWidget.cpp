@@ -23,7 +23,7 @@ ParticleWidget::ParticleWidget(QWidget *parent)
     connect(m_cudaEngine, &CudaEngine::simulationFinished, this, QOverload<>::of(&QWidget::update));
 
     // Initialisation du moteur CUDA avec le nb de particules
-    CudaEngine::initDevice(4000);
+    CudaEngine::initDevice(20000);
 
     m_timer = new QTimer(this);
 
