@@ -389,8 +389,10 @@ extern "C" void run_cuda_simulation(
         d_particle_index, // Valeurs triées
         unique_hashes_temp.begin(), // Pour stocker les hashs uniques (non utilisé, mais nécessaire)
         d_cell_starts // OÙ stocker les index de DÉBUT de chaque groupe
-        &end_
+        &end_keys_ptr,   // Pointeur pour le résultat (le nouveau pointeur de fin des clés)
+        &end_values_ptr  // Pointeur pour le résultat (le nouveau pointeur de fin des valeurs)
         );
+
     // Le nombre de cellules uniques est la distance jusqu'au pointeur de fin
     int numUniqueCells = thrust::distance(d_cell_starts, result.second);
     // Note: On devrait stocker ce numUniqueCells statiquement pour un usage ultérieur.
