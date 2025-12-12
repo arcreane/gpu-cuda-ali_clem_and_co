@@ -16,14 +16,14 @@ ParticleWidget::ParticleWidget(QWidget *parent)
     m_bounciness = 0.5f;
     m_friction = 0.98f;
 
-    initParticles(20000);
+    initParticles(50000);
     m_cudaEngine = new CudaEngine(this); // Initialisation de l'Engine et connexion du signal
 
     // Connexion : Quand le calcul distant est fait, redessine l'UI
     connect(m_cudaEngine, &CudaEngine::simulationFinished, this, QOverload<>::of(&QWidget::update));
 
     // Initialisation du moteur CUDA avec le nb de particules
-    CudaEngine::initDevice(20000);
+    CudaEngine::initDevice(50000);
 
     m_timer = new QTimer(this);
 
