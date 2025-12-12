@@ -72,13 +72,19 @@ ParticleWidget::~ParticleWidget()
 void ParticleWidget::initParticles(int count)
 {
     m_particles.resize(count);
+
+    // On récupère les dimensions actuelles du Widget
+    // 'width()' et 'height()' sont des méthodes héritées de QWidget.
+    float widgetWidth = (float)width();
+    float widgetHeight = (float)height();
+
     // Si la taille change, on doit aussi réinitialiser le GPU
     if (CudaEngine::s_allocated_count != 0){
         CudaEngine::initDevice(count);
     } 
     for (int i = 0; i < count; ++i) {
-        float x = QRandomGenerator::global()->bounded(800.0);
-        float y = QRandomGenerator::global()->bounded(600.0);
+        float x = QRandomGenerator::global()->bounded(widgetWidth);
+        float y = QRandomGenerator::global()->bounded(widgetHeight);
         m_particles[i].position = QPointF(x, y);
         m_particles[i].velocity = QPointF(0, 0);
     }
