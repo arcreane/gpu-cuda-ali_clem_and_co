@@ -4,6 +4,7 @@
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
+#include <thrust/pair.h>
 
 // Définition des constantes de simulation (à synchroniser avec Qt si nécessaire)
 // Pour l'interaction souris
