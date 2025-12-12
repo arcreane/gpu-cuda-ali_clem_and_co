@@ -293,6 +293,7 @@ static float* d_pos_x = nullptr;
 static float* d_pos_y = nullptr;
 static float* d_vel_x = nullptr;
 static float* d_vel_y = nullptr;
+static int* d_cell_starts = nullptr;
 static int* d_grid_hash = nullptr;
 static int* d_particle_index = nullptr;
 static int s_allocated_count = 0;
@@ -320,6 +321,7 @@ extern "C" void run_cuda_simulation(
         if (d_vel_y) cudaFree(d_vel_y);
         if (d_grid_hash) cudaFree(d_grid_hash);
         if (d_particle_index) cudaFree(d_particle_index);
+        if (d_cell_starts) cudaFree(d_cell_starts);
         
         // Allocation de la nouvelle mémoire
         cudaMalloc((void**)&d_pos_x, size);
@@ -328,6 +330,7 @@ extern "C" void run_cuda_simulation(
         cudaMalloc((void**)&d_vel_y, size);
         cudaMalloc((void**)&d_grid_hash, numParticles * sizeof(int)); // Allocation de mémoire pour les tableaux de hashage et de l'index
         cudaMalloc((void**)&d_particle_index, numParticles * sizeof(int));
+        cudaMalloc((void**)&d_cell_starts, numParticles * sizeof(int)); // Allocation généreuse car la taille finale sera plus petite
         s_allocated_count = numParticles;
     }
     
@@ -365,6 +368,24 @@ extern "C" void run_cuda_simulation(
         d_grid_hash + numParticles,
         d_particle_index
         );
+
+    // ÉTAPE 3 : Calculer les index de début de chaque cellule
+    // Utilisation d'un vecteur temporaire pour stocker les index de fin
+    thrust::device_vector<int> unique_hashes_temp(numParticles);
+
+    // unique_by_key renvoie un pointeur vers la fin de la nouvelle séquence.
+    // L'algorithme écrit l'index de début de chaque groupe dans d_cell_starts
+    thrust::pair<int*, int*> result = thrust::unique_by_key(
+        thrust::device,
+        d_grid_hash, // Clés triées
+        d_grid_hash + numParticles,
+        d_particle_index, // Valeurs triées
+        unique_hashes_temp.begin(), // Pour stocker les hashs uniques (non utilisé, mais nécessaire)
+        d_cell_starts // OÙ stocker les index de DÉBUT de chaque groupe
+        );
+    // Le nombre de cellules uniques est la distance jusqu'au pointeur de fin
+    int numUniqueCells = thrust::distance(d_cell_starts, result.second);
+    // Note: On devrait stocker ce numUniqueCells statiquement pour un usage ultérieur.
     
     // KERNEL 1 : Application des forces, mouvement et frottement
     applyForcesAndMoveKernel<<<blocksPerGrid, threadsPerBlock>>>(
