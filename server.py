@@ -28,7 +28,7 @@ app = Flask(__name__)
 
 @app.route('/simulate', methods=['POST'])
 def simulate():
-    """if not cuda_lib:
+    if not cuda_lib:
         return jsonify({"error": "CUDA Engine not loaded"}), 500
 
     data = request.get_json()
@@ -59,7 +59,7 @@ def simulate():
         c_bool(data['attraction_mode']),
         c_int(150) # interactionRadius (valeur en dur dans votre code Qt)
     )
-    """
+
     # On commente la lib cuda pour voir si le pb vient de Cuda ou python
     # 2.3 Sérialisation des résultats
     result_particles = []
