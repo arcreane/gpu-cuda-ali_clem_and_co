@@ -139,7 +139,6 @@ void ParticleWidget::updateParticles()
                 if (distSq < minDistSq && distSq > 0.001f) {
                     float dist = std::sqrt(distSq);
 
-                    // 1. Repousser les particules pour qu'elles ne se chevauchent pas
                     float overlap = (minDist - dist) * 0.5f;
                     float nx = dx / dist;
                     float ny = dy / dist;
@@ -185,8 +184,6 @@ void ParticleWidget::paintEvent(QPaintEvent *)
         painter.drawRect(QRectF(p.position.x(), p.position.y(), 3, 3));
     }
 }
-
-// Dans ParticleWidget.cpp
 
 void ParticleWidget::changeParticleCount(int count)
 {
