@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QVector>
 #include <QPointF>
+#include <QElapsedTimer>
 #include <QTimer>
 
 struct Particle {
@@ -17,6 +18,9 @@ class ParticleWidget : public QWidget
 
 public:
     explicit ParticleWidget(QWidget *parent = nullptr);
+
+signals:
+    void fpsChanged(int fps);
 
 public slots:
     void updateParticles();
@@ -35,8 +39,9 @@ private:
 
     float m_bounciness;
     float m_friction;
-
     void initParticles(int count);
+    int m_frameCount;
+    QElapsedTimer m_fpsTimer;
 };
 
 #endif // PARTICLEWIDGET_H

@@ -21,6 +21,9 @@ ParticleWidget::ParticleWidget(QWidget *parent)
     m_timer->start(16);
 
     m_lastMousePos = QPointF(0, 0);
+
+    m_frameCount = 0;
+    m_fpsTimer.start();
 }
 
 void ParticleWidget::initParticles(int count)
@@ -139,6 +142,7 @@ void ParticleWidget::updateParticles()
                 if (distSq < minDistSq && distSq > 0.001f) {
                     float dist = std::sqrt(distSq);
 
+                    // 1. Repousser les particules pour qu'elles ne se chevauchent pas
                     float overlap = (minDist - dist) * 0.5f;
                     float nx = dx / dist;
                     float ny = dy / dist;
@@ -182,6 +186,15 @@ void ParticleWidget::paintEvent(QPaintEvent *)
 
     for (const Particle &p : m_particles) {
         painter.drawRect(QRectF(p.position.x(), p.position.y(), 3, 3));
+    }
+
+    m_frameCount++;
+
+    if (m_fpsTimer.elapsed() >= 1000) {
+        emit fpsChanged(m_frameCount);
+
+        m_frameCount = 0;
+        m_fpsTimer.restart();
     }
 }
 
