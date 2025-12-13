@@ -8,7 +8,7 @@ from ctypes import cdll, POINTER, c_float, c_int, c_bool
 # --- 1. CHARGEMENT DE LA LIBRAIRIE CUDA COMPILÉE ---
 try:
     # Charge la librairie partagée créée par nvcc
-    # NOTE: Le chemin peut varier selon la structure de votre dépôt
+    # NOTE: Le chemin peut varier selon la structure de notre dépôt
     cuda_lib = cdll.LoadLibrary('./libCudaPhysics.so')
     
     # Définition des types d'arguments de la fonction C (c'est essentiel!)
@@ -41,6 +41,8 @@ def simulate():
     vel_x = np.array([p['vx'] for p in data['particles']], dtype=np.float32)
     vel_y = np.array([p['vy'] for p in data['particles']], dtype=np.float32)
 
+    """
+    # Essai commentaire de la lib cuda
     # 2.2 Appel de la fonction C/CUDA
     # Conversion des tableaux numpy en pointeurs C pour les passer à la librairie compilée
     cuda_lib.run_cuda_simulation(
@@ -59,6 +61,7 @@ def simulate():
         c_bool(data['attraction_mode']),
         c_int(150) # interactionRadius (valeur en dur dans votre code Qt)
     )
+    """
 
     # On commente la lib cuda pour voir si le pb vient de Cuda ou python
     # 2.3 Sérialisation des résultats
