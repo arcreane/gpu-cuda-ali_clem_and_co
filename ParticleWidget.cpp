@@ -71,14 +71,13 @@ void ParticleWidget::initParticles(int count)
 {
     m_particles.resize(count);
 
-    // On récupère les dimensions actuelles du Widget
-    // 'width()' et 'height()' sont des méthodes héritées de QWidget.
-    float widgetWidth = (float)width();
-    float widgetHeight = (float)height();
+    // a peu près la taille de la fenêtre.
+    float initialWidth = 1200.0f;
+    float initialHeight = 900.0f;
 
     for (int i = 0; i < count; ++i) {
-        float x = QRandomGenerator::global()->bounded(widgetWidth);
-        float y = QRandomGenerator::global()->bounded(widgetHeight);
+        float x = QRandomGenerator::global()->bounded(initialWidth);
+        float y = QRandomGenerator::global()->bounded(initialHeight);
         m_particles[i].position = QPointF(x, y);
         m_particles[i].velocity = QPointF(0, 0);
     }
