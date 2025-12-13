@@ -41,8 +41,8 @@ def simulate():
     vel_x = np.array([p['vx'] for p in data['particles']], dtype=np.float32)
     vel_y = np.array([p['vy'] for p in data['particles']], dtype=np.float32)
 
-    """
-    # Essai commentaire de la lib cuda
+
+
     # 2.2 Appel de la fonction C/CUDA
     # Conversion des tableaux numpy en pointeurs C pour les passer à la librairie compilée
     cuda_lib.run_cuda_simulation(
@@ -61,7 +61,6 @@ def simulate():
         c_bool(data['attraction_mode']),
         c_int(150) # interactionRadius (valeur en dur dans votre code Qt)
     )
-    """
 
     # On commente la lib cuda pour voir si le pb vient de Cuda ou python
     # 2.3 Sérialisation des résultats
